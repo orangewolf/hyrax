@@ -19,20 +19,30 @@ jobs:
     steps:
     - restore_cache:
         keys:
-        - source-v1-{{ .Branch }}-{{ .Revision }}
-        - source-v1-{{ .Branch }}-
-        - source-v1-
+        - v1-source-{{ .Branch }}-{{ .Revision }}
+        - v1-source-{{ .Branch }}-
+        - v1-source-
 
     - checkout
+
+    - save_cache:
+        key: v1-source-{{ .Branch }}-{{ .Revision }}
+        paths:
+        - ".git"
+
+    - restore_cache:
+        keys:
+        - v1-bundle-{{ .Branch }}-{{ .Revision }}
+        - v1-bundle-{{ .Branch }}-
+        - v1-bundle-
 
     - run:
         name: Install dependencies
         command: bundle check || bundle install
 
     - save_cache:
-        key: source-v1-{{ .Branch }}-{{ .Revision }}
+        key: v1-bundle-{{ .Branch }}-{{ .Revision }}
         paths:
-        - ".git"
         - ~/bundle
 
     - persist_to_workspace:
@@ -81,11 +91,20 @@ jobs:
     - attach_workspace:
         at: ~/
 
+    - restore_cache:
+        keys:
+        - v1-test-app-{{ .Branch }}-{{ .Revision }}
+        - v1-test-app-{{ .Branch }}-
+        - v1-test-app-
+
     - run:
-        name: Generate test app, ensure top-level Gemfile.lock is valid
-        command: |
-          bundle exec rake engine_cart:generate
-          bundle check || bundle install
+        name: Generate test app
+        command: bundle exec rake engine_cart:generate
+
+    - save_cache:
+        key: v1-test-app-{{ .Branch }}-{{ .Revision }}
+        paths:
+        - ".internal_test_app"
 
     - persist_to_workspace:
         root: ~/
@@ -123,6 +142,10 @@ jobs:
     steps:
     - attach_workspace:
         at: ~/
+
+    - run:
+        name: Ensure top-level Gemfile.lock is valid
+        command: bundle check || bundle install
 
     - run:
         name: Load config into SolrCloud
