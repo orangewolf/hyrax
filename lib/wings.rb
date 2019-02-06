@@ -14,3 +14,7 @@ require 'wings/valkyrie_monkey_patch'
 require 'wings/valkyrie/resource_factory'
 
 ActiveFedora::Base.include Wings::Valkyrizable
+
+Valkyrie.config.resource_class_resolver = lambda do |resource_klass_name|
+  Wings::ModelTransformer.convert_class_name_to_valkyrie_resource_class(internal_resource)
+end
